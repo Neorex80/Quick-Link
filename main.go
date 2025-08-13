@@ -21,7 +21,8 @@ type URLStore struct {
 
 // ShortenRequest represents the JSON request for shortening a URL
 type ShortenRequest struct {
-	URL string `json:"url"`
+	URL        string `json:"url"`
+	CustomCode string `json:"custom_code,omitempty"`
 }
 
 // ShortenResponse represents the JSON response for shortening a URL
@@ -95,11 +96,41 @@ func handleShorten(w http.ResponseWriter, r *http.Request) {
 	// Sanitize URL
 	sanitizedURL := sanitizeURL(req.URL)
 
-	// Generate short code
-	shortCode, err := generateShortCode()
-	if err != nil {
-		sendErrorResponse(w, http.StatusInternalServerError, "Generation failed", "Failed to generate short code")
-		return
+	var shortCode string
+	var err error
+
+	// Use custom code if provided, otherwise generate random code
+	if req.CustomCode != "" {
+		// Validate custom code
+		if !isValidCustomCode(req.CustomCode) {
+			sendErrorResponse(w, http.StatusBadRequest, "Invalid custom code", "Custom code must be 3-20 characters, alphanumeric and hyphens only")
+			return
+		}
+
+		// Check if custom code is reserved
+		if isReservedCode(req.CustomCode) {
+			sendErrorResponse(w, http.StatusBadRequest, "Reserved code", "This custom code is reserved and cannot be used")
+			return
+		}
+
+		// Check if custom code already exists
+		store.mu.RLock()
+		_, exists := store.urls[req.CustomCode]
+		store.mu.RUnlock()
+
+		if exists {
+			sendErrorResponse(w, http.StatusConflict, "Code already exists", "This custom code is already in use")
+			return
+		}
+
+		shortCode = req.CustomCode
+	} else {
+		// Generate random short code
+		shortCode, err = generateShortCode()
+		if err != nil {
+			sendErrorResponse(w, http.StatusInternalServerError, "Generation failed", "Failed to generate short code")
+			return
+		}
 	}
 
 	// Store the mapping
@@ -238,20 +269,76 @@ func sanitizeURL(rawURL string) string {
 
 // isValidShortCode validates the format of a short code
 func isValidShortCode(code string) bool {
-	if len(code) != codeLength {
+	// For custom codes, allow variable length
+	if len(code) < 3 || len(code) > 20 {
 		return false
 	}
 
-	// Check if code contains only alphanumeric characters
+	// Check if code contains only alphanumeric characters and hyphens
 	for _, char := range code {
 		if !((char >= 'a' && char <= 'z') || 
 			 (char >= 'A' && char <= 'Z') || 
-			 (char >= '0' && char <= '9')) {
+			 (char >= '0' && char <= '9') ||
+			 char == '-') {
 			return false
 		}
 	}
 
 	return true
+}
+
+// isValidCustomCode validates the format of a custom short code
+func isValidCustomCode(code string) bool {
+	// Length check
+	if len(code) < 3 || len(code) > 20 {
+		return false
+	}
+
+	// Cannot start or end with hyphen
+	if strings.HasPrefix(code, "-") || strings.HasSuffix(code, "-") {
+		return false
+	}
+
+	// Cannot have consecutive hyphens
+	if strings.Contains(code, "--") {
+		return false
+	}
+
+	// Check if code contains only alphanumeric characters and hyphens
+	for _, char := range code {
+		if !((char >= 'a' && char <= 'z') || 
+			 (char >= 'A' && char <= 'Z') || 
+			 (char >= '0' && char <= '9') ||
+			 char == '-') {
+			return false
+		}
+	}
+
+	return true
+}
+
+// isReservedCode checks if a code is reserved and cannot be used
+func isReservedCode(code string) bool {
+	reserved := []string{
+		"admin", "api", "www", "ftp", "mail", "email", "support", "help",
+		"about", "contact", "terms", "privacy", "legal", "blog", "news",
+		"docs", "documentation", "download", "downloads", "upload", "uploads",
+		"static", "assets", "css", "js", "img", "images", "favicon",
+		"robots", "sitemap", "feed", "rss", "atom", "xml", "json",
+		"login", "logout", "signin", "signup", "register", "auth",
+		"dashboard", "profile", "account", "settings", "config",
+		"test", "testing", "dev", "development", "staging", "prod", "production",
+		"qr", "shorten", "short", "url", "link", "redirect",
+	}
+
+	lowerCode := strings.ToLower(code)
+	for _, reservedWord := range reserved {
+		if lowerCode == reservedWord {
+			return true
+		}
+	}
+
+	return false
 }
 
 // generateShortCode generates a random short code
