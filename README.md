@@ -7,6 +7,10 @@ A modern, fast, and secure URL shortener built with Go, featuring a beautiful we
 ![Docker](https://img.shields.io/badge/Docker-Ready-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
+
+   <img width="650" height="416" alt="image" src="https://github.com/user-attachments/assets/0433b494-56a2-4dda-b53b-c112f6450dd0" />
+
+
 ## ✨ Features
 
 - 🎨 **Modern UI**: Beautiful gradient design with glass-morphism effects
