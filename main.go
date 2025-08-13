@@ -9,6 +9,8 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+
+	"github.com/skip2/go-qrcode"
 )
 
 // URLStore represents our in-memory storage
@@ -45,12 +47,14 @@ const (
 
 func main() {
 	http.HandleFunc("/shorten", handleShorten)
+	http.HandleFunc("/qr/", handleQRCode)
 	http.HandleFunc("/", handleRedirect)
 
 	fmt.Printf("URL Shortener running on %s\n", baseURL)
 	fmt.Println("Usage:")
 	fmt.Println("  POST /shorten - Shorten a URL")
 	fmt.Println("  GET /{code}   - Redirect to original URL")
+	fmt.Println("  GET /qr/{code} - Get QR code for short URL")
 	
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -114,6 +118,47 @@ func handleShorten(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 
 	log.Printf("Shortened URL: %s -> %s", sanitizedURL, response.ShortURL)
+}
+
+// handleQRCode handles GET requests to generate QR codes for short URLs
+func handleQRCode(w http.ResponseWriter, r *http.Request) {
+	// Extract short code from path
+	shortCode := strings.TrimPrefix(r.URL.Path, "/qr/")
+
+	// Validate short code format
+	if !isValidShortCode(shortCode) {
+		http.NotFound(w, r)
+		return
+	}
+
+	// Look up original URL
+	store.mu.RLock()
+	_, exists := store.urls[shortCode]
+	store.mu.RUnlock()
+
+	if !exists {
+		http.NotFound(w, r)
+		log.Printf("Short code not found for QR: %s", shortCode)
+		return
+	}
+
+	// Generate QR code for the short URL
+	shortURL := fmt.Sprintf("%s/%s", baseURL, shortCode)
+	qrCode, err := qrcode.Encode(shortURL, qrcode.Medium, 256)
+	if err != nil {
+		http.Error(w, "Failed to generate QR code", http.StatusInternalServerError)
+		log.Printf("QR code generation failed: %v", err)
+		return
+	}
+
+	// Set headers for PNG image
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(qrCode)))
+	w.Header().Set("Cache-Control", "public, max-age=3600") // Cache for 1 hour
+
+	// Write QR code image
+	w.Write(qrCode)
+	log.Printf("QR code generated for: %s", shortCode)
 }
 
 // handleRedirect handles GET requests to redirect short URLs
