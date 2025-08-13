@@ -504,11 +504,30 @@ func getHomePage() string {
             background: #f9fafb;
         }
         
-        input[type="url"]:focus {
+        input[type="url"]:focus,
+        input[type="text"]:focus {
             outline: none;
             border-color: #667eea;
             background: white;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        
+        .input-hint {
+            display: block;
+            color: #9ca3af;
+            font-size: 0.8rem;
+            margin-top: 5px;
+            margin-left: 45px;
         }
         
         .shorten-btn {
@@ -628,6 +647,110 @@ func getHomePage() string {
             background: #9ca3af;
         }
         
+        .url-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .short-url {
+            flex: 1;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .copy-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+        
+        .copy-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        .qr-section {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .qr-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+            color: #374151;
+            font-weight: 500;
+        }
+        
+        .qr-header i {
+            color: #667eea;
+        }
+        
+        .qr-container {
+            text-align: center;
+        }
+        
+        .qr-code {
+            max-width: 200px;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .qr-actions {
+            margin-top: 15px;
+        }
+        
+        .qr-download-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .qr-download-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
         @media (max-width: 480px) {
             .container {
                 padding: 30px 20px;
@@ -640,6 +763,20 @@ func getHomePage() string {
             
             .subtitle {
                 font-size: 1rem;
+            }
+            
+            .url-container {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .short-url {
+                width: 100%;
+                text-align: center;
+            }
+            
+            .qr-code {
+                max-width: 150px;
             }
         }
     </style>
@@ -663,6 +800,11 @@ func getHomePage() string {
                 <div class="input-group">
                     <i class="fas fa-globe input-icon"></i>
                     <input type="url" id="urlInput" placeholder="https://example.com/your/very/long/url/here" required>
+                </div>
+                <div class="input-group">
+                    <i class="fas fa-edit input-icon"></i>
+                    <input type="text" id="customCodeInput" placeholder="my-custom-code (optional)" maxlength="20">
+                    <small class="input-hint">3-20 characters, letters, numbers, and hyphens only</small>
                 </div>
                 <button type="submit" class="shorten-btn">
                     <i class="fas fa-magic"></i>
@@ -689,6 +831,7 @@ func getHomePage() string {
             e.preventDefault();
             
             const url = document.getElementById('urlInput').value;
+            const customCode = document.getElementById('customCodeInput').value.trim();
             const resultDiv = document.getElementById('result');
             const container = document.querySelector('.container');
             const submitBtn = document.querySelector('.shorten-btn');
@@ -697,19 +840,54 @@ func getHomePage() string {
             container.classList.add('loading');
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Shortening...';
             
+            // Prepare request body
+            const requestBody = { url: url };
+            if (customCode) {
+                requestBody.custom_code = customCode;
+            }
+            
             try {
                 const response = await fetch('/shorten', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ url: url })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 const data = await response.json();
                 
                 if (response.ok) {
-                    resultDiv.innerHTML = '<div class="result"><strong><i class="fas fa-check-circle"></i> Success! Your shortened URL:</strong><a href="' + data.short_url + '" target="_blank">' + data.short_url + '</a></div>';
+                    // Extract short code from URL
+                    const shortCode = data.short_url.split('/').pop();
+                    const qrUrl = '/qr/' + shortCode;
+                    
+                    resultDiv.innerHTML = 
+                        '<div class="result-container">' +
+                            '<div class="result">' +
+                                '<strong><i class="fas fa-check-circle"></i> Success! Your shortened URL:</strong>' +
+                                '<div class="url-container">' +
+                                    '<a href="' + data.short_url + '" target="_blank" class="short-url">' + data.short_url + '</a>' +
+                                    '<button class="copy-btn" onclick="copyToClipboard(\'' + data.short_url + '\')">' +
+                                        '<i class="fas fa-copy"></i>' +
+                                    '</button>' +
+                                '</div>' +
+                                '<div class="qr-section">' +
+                                    '<div class="qr-header">' +
+                                        '<i class="fas fa-qrcode"></i>' +
+                                        '<span>QR Code for easy sharing</span>' +
+                                    '</div>' +
+                                    '<div class="qr-container">' +
+                                        '<img src="' + qrUrl + '" alt="QR Code" class="qr-code" loading="lazy">' +
+                                        '<div class="qr-actions">' +
+                                            '<button class="qr-download-btn" onclick="downloadQR(\'' + qrUrl + '\', \'' + shortCode + '\')">' +
+                                                '<i class="fas fa-download"></i> Download' +
+                                            '</button>' +
+                                        '</div>' +
+                                    '</div>' +
+                                '</div>' +
+                            '</div>' +
+                        '</div>';
                 } else {
                     resultDiv.innerHTML = '<div class="error"><strong><i class="fas fa-exclamation-triangle"></i> Error:</strong> ' + data.message + '</div>';
                 }
@@ -722,8 +900,43 @@ func getHomePage() string {
             }
         });
         
-        // Add some interactive effects
+        // Copy to clipboard function
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show success feedback
+                const copyBtn = event.target.closest('.copy-btn');
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.style.background = '#10b981';
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.style.background = '';
+                }, 2000);
+            }).catch(function() {
+                alert('Failed to copy to clipboard');
+            });
+        }
+        
+        // Download QR code function
+        function downloadQR(qrUrl, shortCode) {
+            const link = document.createElement('a');
+            link.href = qrUrl;
+            link.download = 'qr-code-' + shortCode + '.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Clear results when typing
         document.getElementById('urlInput').addEventListener('input', function() {
+            const resultDiv = document.getElementById('result');
+            if (resultDiv.innerHTML) {
+                resultDiv.innerHTML = '';
+            }
+        });
+        
+        document.getElementById('customCodeInput').addEventListener('input', function() {
             const resultDiv = document.getElementById('result');
             if (resultDiv.innerHTML) {
                 resultDiv.innerHTML = '';
