@@ -49,6 +49,7 @@ const (
 func main() {
 	http.HandleFunc("/shorten", handleShorten)
 	http.HandleFunc("/qr/", handleQRCode)
+	http.HandleFunc("/favicon.ico", handleFavicon)
 	http.HandleFunc("/", handleRedirect)
 
 	fmt.Printf("URL Shortener running on %s\n", baseURL)
@@ -56,6 +57,7 @@ func main() {
 	fmt.Println("  POST /shorten - Shorten a URL")
 	fmt.Println("  GET /{code}   - Redirect to original URL")
 	fmt.Println("  GET /qr/{code} - Get QR code for short URL")
+	fmt.Println("  GET /favicon.ico - Favicon")
 	
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -190,6 +192,24 @@ func handleQRCode(w http.ResponseWriter, r *http.Request) {
 	// Write QR code image
 	w.Write(qrCode)
 	log.Printf("QR code generated for: %s", shortCode)
+}
+
+// handleFavicon handles favicon requests to prevent 404 errors
+func handleFavicon(w http.ResponseWriter, r *http.Request) {
+	// Return a simple 1x1 transparent PNG
+	favicon := []byte{
+		0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0x00, 0x00, 0x00, 0x0D,
+		0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01,
+		0x08, 0x06, 0x00, 0x00, 0x00, 0x1F, 0x15, 0xC4, 0x89, 0x00, 0x00, 0x00,
+		0x0A, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9C, 0x63, 0x00, 0x01, 0x00, 0x00,
+		0x05, 0x00, 0x01, 0x0D, 0x0A, 0x2D, 0xB4, 0x00, 0x00, 0x00, 0x00, 0x49,
+		0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82,
+	}
+	
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "public, max-age=86400") // Cache for 24 hours
+	w.WriteHeader(http.StatusOK)
+	w.Write(favicon)
 }
 
 // handleRedirect handles GET requests to redirect short URLs
@@ -415,21 +435,119 @@ func getHomePage() string {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .page-wrapper {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .navbar {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .nav-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.2rem;
+        }
+        
+        .nav-logo i {
+            font-size: 1.5rem;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link:hover {
+            color: white;
+        }
+        
+        .main-content {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 20px;
+            padding: 40px 20px;
         }
         
         .container {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 40px;
+            padding: 50px;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
             position: relative;
+        }
+        
+        .footer-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 30px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: auto;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            text-align: center;
+        }
+        
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .footer-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+        
+        .footer-link:hover {
+            color: white;
+        }
+        
+        .footer-info {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.8rem;
         }
         
         .header {
@@ -817,48 +935,86 @@ func getHomePage() string {
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="logo">
-                <i class="fas fa-link"></i>
-                <h1>QuickLink</h1>
-            </div>
-            <p class="subtitle">Transform long URLs into short, shareable links</p>
-            <p class="description">
-                A fast, secure, and reliable URL shortener built with Go. 
-                Perfect for social media, emails, and anywhere you need clean, compact links.
-            </p>
-        </div>
-        
-        <div class="form-container">
-            <form id="shortenForm">
-                <div class="input-group">
-                    <i class="fas fa-globe input-icon"></i>
-                    <input type="url" id="urlInput" placeholder="https://example.com/your/very/long/url/here" required>
+    <div class="page-wrapper">
+        <!-- Navigation Bar -->
+        <nav class="navbar">
+            <div class="nav-content">
+                <a href="/" class="nav-logo">
+                    <i class="fas fa-link"></i>
+                    QuickLink
+                </a>
+                <div class="nav-links">
+                    <a href="#features" class="nav-link">Features</a>
+                    <a href="#api" class="nav-link">API</a>
+                    <a href="https://github.com/Neorex80/Quick-Link" target="_blank" class="nav-link">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
                 </div>
-                <div class="input-group">
-                    <i class="fas fa-edit input-icon"></i>
-                    <input type="text" id="customCodeInput" placeholder="my-custom-code (optional)" maxlength="20">
-                    <small class="input-hint">3-20 characters, letters, numbers, and hyphens only</small>
-                </div>
-                <button type="submit" class="shorten-btn">
-                    <i class="fas fa-magic"></i>
-                    Shorten URL
-                </button>
-            </form>
-        </div>
-        
-        <div id="result"></div>
-        
-        <div class="footer">
-            <a href="https://github.com/Neorex80" target="_blank" class="github-link">
-                <i class="fab fa-github"></i>
-                Created by Neorex80
-            </a>
-            <div class="trademark">
-                © 2025 QuickLink. Built with ❤️ using Go
             </div>
-        </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="container">
+                <div class="header">
+                    <div class="logo">
+                        <i class="fas fa-link"></i>
+                        <h1>QuickLink</h1>
+                    </div>
+                    <p class="subtitle">Transform long URLs into short, shareable links</p>
+                    <p class="description">
+                        A fast, secure, and reliable URL shortener built with Go. 
+                        Perfect for social media, emails, and anywhere you need clean, compact links.
+                    </p>
+                </div>
+                
+                <div class="form-container">
+                    <form id="shortenForm">
+                        <div class="input-group">
+                            <i class="fas fa-globe input-icon"></i>
+                            <input type="url" id="urlInput" placeholder="https://example.com/your/very/long/url/here" required>
+                        </div>
+                        <div class="input-group">
+                            <i class="fas fa-edit input-icon"></i>
+                            <input type="text" id="customCodeInput" placeholder="my-custom-code (optional)" maxlength="20">
+                            <small class="input-hint">3-20 characters, letters, numbers, and hyphens only</small>
+                        </div>
+                        <button type="submit" class="shorten-btn">
+                            <i class="fas fa-magic"></i>
+                            Shorten URL
+                        </button>
+                    </form>
+                </div>
+                
+                <div id="result"></div>
+                
+                <div class="footer">
+                    <a href="https://github.com/Neorex80" target="_blank" class="github-link">
+                        <i class="fab fa-github"></i>
+                        Created by Neorex80
+                    </a>
+                    <div class="trademark">
+                        © 2025 QuickLink. Built with ❤️ using Go
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer-section">
+            <div class="footer-content">
+                <div class="footer-links">
+                    <a href="#about" class="footer-link">About</a>
+                    <a href="#privacy" class="footer-link">Privacy</a>
+                    <a href="#terms" class="footer-link">Terms</a>
+                    <a href="#contact" class="footer-link">Contact</a>
+                    <a href="https://github.com/Neorex80/Quick-Link" target="_blank" class="footer-link">GitHub</a>
+                </div>
+                <div class="footer-info">
+                    © 2025 QuickLink. Built with ❤️ using Go. Fast, secure, and reliable URL shortening service.
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script>
