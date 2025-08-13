@@ -710,28 +710,33 @@ func getHomePage() string {
         }
         
         .qr-code {
-            max-width: 200px;
+            max-width: 160px;
             width: 100%;
             height: auto;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             animation: fadeIn 0.5s ease;
+            padding: 8px;
+            background: white;
         }
         
         .qr-actions {
-            margin-top: 15px;
+            margin-top: 12px;
         }
         
         .qr-download-btn {
             background: #10b981;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 8px 16px;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         
         .qr-download-btn:hover {
@@ -740,15 +745,45 @@ func getHomePage() string {
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
         }
         
+        .result-container {
+            animation: slideInUp 0.4s ease-out;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: scale(0.9);
+                transform: scale(0.95);
             }
             to {
                 opacity: 1;
                 transform: scale(1);
             }
+        }
+        
+        .copy-success {
+            background: #10b981 !important;
+            transform: scale(0.95);
+        }
+        
+        .copy-success i {
+            animation: checkPulse 0.3s ease;
+        }
+        
+        @keyframes checkPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
         
         @media (max-width: 480px) {
@@ -902,20 +937,54 @@ func getHomePage() string {
         
         // Copy to clipboard function
         function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(function() {
-                // Show success feedback
-                const copyBtn = event.target.closest('.copy-btn');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showCopySuccess();
+                }).catch(function() {
+                    fallbackCopyToClipboard(text);
+                });
+            } else {
+                fallbackCopyToClipboard(text);
+            }
+        }
+        
+        // Fallback copy function for older browsers
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showCopySuccess();
+            } catch (err) {
+                alert('Failed to copy to clipboard. Please copy manually: ' + text);
+            }
+            
+            document.body.removeChild(textArea);
+        }
+        
+        // Show copy success feedback
+        function showCopySuccess() {
+            const copyBtn = document.querySelector('.copy-btn');
+            if (copyBtn) {
                 const originalHTML = copyBtn.innerHTML;
+                const originalBg = copyBtn.style.background;
+                
                 copyBtn.innerHTML = '<i class="fas fa-check"></i>';
-                copyBtn.style.background = '#10b981';
+                copyBtn.classList.add('copy-success');
                 
                 setTimeout(() => {
                     copyBtn.innerHTML = originalHTML;
-                    copyBtn.style.background = '';
+                    copyBtn.classList.remove('copy-success');
+                    copyBtn.style.background = originalBg;
                 }, 2000);
-            }).catch(function() {
-                alert('Failed to copy to clipboard');
-            });
+            }
         }
         
         // Download QR code function
