@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  quicklink:
+    build: .
+    container_name: quicklink-url-shortener
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - quicklink-network
+
+networks:
+  quicklink-network:
+    driver: bridge
