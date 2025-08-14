@@ -1,0 +1,41 @@
+{
+  "name": "QuickLink URL Shortener",
+  "description": "A fast, secure URL shortener built with Go featuring a beautiful web interface and QR code generation.",
+  "repository": "https://github.com/Neorex80/Quick-Link",
+  "logo": "https://img.shields.io/badge/QuickLink-URL%20Shortener-blue",
+  "keywords": [
+    "url-shortener",
+    "go",
+    "golang",
+    "web-app",
+    "qr-code",
+    "docker"
+  ],
+  "image": "heroku/go",
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/go"
+    }
+  ],
+  "env": {
+    "GO_VERSION": {
+      "description": "Go version to use",
+      "value": "1.21"
+    },
+    "PORT": {
+      "description": "Port the app will run on",
+      "value": "8080"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "eco"
+    }
+  },
+  "addons": [],
+  "scripts": {
+    "postdeploy": "echo 'QuickLink deployed successfully!'"
+  }
+}

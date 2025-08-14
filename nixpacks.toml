@@ -1,0 +1,12 @@
+[phases.setup]
+nixPkgs = ["go_1_21"]
+
+[phases.build]
+cmds = ["go mod download", "go build -o main ."]
+
+[start]
+cmd = "./main"
+
+[variables]
+GO_VERSION = "1.21"
+PORT = "8080"

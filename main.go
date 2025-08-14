@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"sync"
 
@@ -42,11 +43,24 @@ var store = &URLStore{
 }
 
 const (
-	baseURL    = "http://localhost:8080"
 	codeLength = 6
 )
 
+var baseURL string
+
 func main() {
+	// Get port from environment variable or default to 8080
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	// Set base URL based on environment
+	baseURL = os.Getenv("BASE_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:" + port
+	}
+
 	http.HandleFunc("/shorten", handleShorten)
 	http.HandleFunc("/qr/", handleQRCode)
 	http.HandleFunc("/favicon.ico", handleFavicon)
@@ -59,7 +73,7 @@ func main() {
 	fmt.Println("  GET /qr/{code} - Get QR code for short URL")
 	fmt.Println("  GET /favicon.ico - Favicon")
 	
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 // handleShorten handles POST requests to shorten URLs
