@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+```name: CI/CD Pipeline
 
 on:
   push:
@@ -84,3 +84,4 @@ jobs:
       uses: securecodewarrior/github-action-gosec@master
       with:
         args: './...'
+```
