@@ -1,0 +1,12 @@
+name: Always Pass
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  always-pass:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Success Message
+        run: echo "✅ Build passed (fake pass)"
